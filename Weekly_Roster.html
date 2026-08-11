@@ -218,6 +218,31 @@
   .sync-pill.saving{background:var(--accent-tint); color:var(--accent-dk);}
   .sync-pill.error{background:var(--warn-bg); color:var(--warn-tx);}
   .sync-pill.ok{opacity:0;}
+
+  /* ---------- Mobile layout ---------- */
+  @media (max-width:820px){
+    #app{ flex-direction:column; }
+    #sidebar{
+      width:100%; flex-direction:row; overflow-x:auto; white-space:nowrap;
+      padding:10px 10px; gap:6px; border-right:none; border-bottom:1px solid var(--grey-line);
+      -webkit-overflow-scrolling:touch;
+    }
+    #sidebar .brand{ display:none; }
+    #sidebar .foot{ display:none; }
+    .nav-btn{ width:auto; flex-shrink:0; padding:9px 13px; }
+    #main{ padding:16px 14px 50px 14px; max-width:100%; }
+    h1.page-title{ font-size:19px; }
+    p.page-sub{ font-size:13px; }
+    .row{ flex-direction:column; }
+    .grid-2{ grid-template-columns:1fr; }
+    .card{ padding:14px 14px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    table{ min-width:640px; }
+    .weekbar{ gap:8px; }
+    .weekbar .weeklabel{ font-size:14px; }
+    .sync-pill{ top:8px; right:8px; font-size:10px; padding:3px 8px; }
+    .kpi{ min-width:130px; padding:14px 14px; }
+    .kpi .value{ font-size:22px; }
+  }
 </style>
 
 <!-- ===================================================================
@@ -229,12 +254,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script>
   const firebaseConfig = {
-   apiKey: "AIzaSyAPwS1GFwqj6KR4dQgxifykh9HS5km6OX4",
-  authDomain: "alpha-7fce5.firebaseapp.com",
-  projectId: "alpha-7fce5",
-  storageBucket: "alpha-7fce5.firebasestorage.app",
-  messagingSenderId: "10647816245",
-  appId: "1:10647816245:web:fbfb982260cf2eef97097c",
+    apiKey: "AIzaSyAPwS1GFwqj6KR4dQgxifykh9HS5km6OX4",
+    authDomain: "alpha-7fce5.firebaseapp.com",
+    projectId: "alpha-7fce5",
+    storageBucket: "alpha-7fce5.firebasestorage.app",
+    messagingSenderId: "10647816245",
+    appId: "1:10647816245:web:fbfb982260cf2eef97097c"
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
