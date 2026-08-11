@@ -251,6 +251,7 @@
      settings → General → "Your apps" → SDK setup and configuration).
      =================================================================== -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script>
   const firebaseConfig = {
@@ -262,14 +263,54 @@
     appId: "1:10647816245:web:fbfb982260cf2eef97097c"
   };
   firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
   const db = firebase.firestore();
   // Everyone who opens this page reads/writes the same single document.
   const rosterDocRef = db.collection("rosterApp").doc("main");
+  // Which entry in a person's "tools" list unlocks THIS tool.
+  const REQUIRED_TOOL_KEY = "roster";
 </script>
+<style>
+  #authGate{
+    position:fixed; inset:0; background:#F5F3EE; z-index:5000;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #authGate .box{
+    width:100%; max-width:360px; background:#fff; border:1px solid #E4DFD1;
+    border-radius:10px; padding:30px 26px; text-align:center; font-family:sans-serif;
+  }
+  #authGate h2{margin:0 0 6px; font-size:1.2rem; color:#1B1B1B;}
+  #authGate p{margin:0 0 20px; font-size:.85rem; color:#6B6455;}
+  #authGate input{
+    width:100%; padding:10px 12px; margin-bottom:10px; border:1px solid #E4DFD1;
+    border-radius:6px; font-size:.9rem; box-sizing:border-box;
+  }
+  #authGate button{
+    width:100%; padding:11px; background:#1B1B1B; color:#fff; border:none;
+    border-radius:6px; font-weight:700; cursor:pointer; margin-top:4px;
+  }
+  #authGate .msg{font-size:.8rem; margin-top:12px; color:#B3402F;}
+  #logoutCorner{
+    position:fixed; bottom:14px; left:14px; z-index:900; font-size:11px;
+    background:#fff; border:1px solid #E4DFD1; padding:5px 10px; border-radius:20px;
+    color:#6B6455; cursor:pointer;
+  }
+</style>
 </head>
 <body>
+<div id="authGate">
+  <div class="box">
+    <h2>Sign in</h2>
+    <p>Enter your login to access the Roster.</p>
+    <input type="email" id="gateEmail" placeholder="Email">
+    <input type="password" id="gatePassword" placeholder="Password">
+    <button id="gateBtn">Sign in</button>
+    <div class="msg" id="gateMsg"></div>
+  </div>
+</div>
+<div id="logoutCorner" style="display:none;">Log out</div>
 <div class="sync-pill" id="syncPill">Loading…</div>
-<div id="app">
+<div id="app" style="display:none;">
   <div id="sidebar">
     <div class="brand">Weekly<span>Roster</span></div>
     <button class="nav-btn" data-page="dashboard"><span class="dot"></span>Dashboard</button>
@@ -296,6 +337,53 @@
     <div class="page" id="page-settings"></div>
   </div>
 </div>
+<script>
+  const gateEmail = document.getElementById('gateEmail');
+  const gatePassword = document.getElementById('gatePassword');
+  const gateMsg = document.getElementById('gateMsg');
+  const authGate = document.getElementById('authGate');
+  const logoutCorner = document.getElementById('logoutCorner');
+  const appDiv = document.getElementById('app');
+
+  document.getElementById('gateBtn').addEventListener('click', async () => {
+    gateMsg.textContent = '';
+    try {
+      await auth.signInWithEmailAndPassword(gateEmail.value.trim(), gatePassword.value);
+    } catch (e) {
+      gateMsg.textContent = 'Incorrect email or password.';
+    }
+  });
+  logoutCorner.addEventListener('click', () => auth.signOut());
+
+  let appHasStarted = false;
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      authGate.style.display = 'flex';
+      logoutCorner.style.display = 'none';
+      appDiv.style.display = 'none';
+      return;
+    }
+    let allowed = false;
+    try {
+      const snap = await db.collection('users').doc(user.uid).get();
+      if (snap.exists) {
+        const data = snap.data();
+        allowed = data.role === 'admin' || (data.tools || []).includes(REQUIRED_TOOL_KEY);
+      }
+    } catch (e) { console.error(e); }
+
+    if (!allowed) {
+      gateMsg.textContent = "You don't have access to this tool.";
+      auth.signOut();
+      return;
+    }
+
+    authGate.style.display = 'none';
+    logoutCorner.style.display = 'block';
+    appDiv.style.display = 'flex';
+    if (!appHasStarted) { appHasStarted = true; startApp(); }
+  });
+</script>
 <div class="toast" id="toast"></div>
 <script>
 /* =========================================================================
@@ -1558,10 +1646,10 @@ RENDERERS.settings = function(){
 /* ---------------------------------------------------------------------
    INIT
    --------------------------------------------------------------------- */
-(async function init(){
+async function startApp(){
   await loadState();
   showPage("dashboard");
-})();
+}
 </script>
 </body>
 </html>
